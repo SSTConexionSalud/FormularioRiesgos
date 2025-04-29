@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", () => {
   // Verificar si html2pdf está disponible
   if (typeof window.html2pdf === "undefined") {
     console.error("html2pdf no está disponible. Cargando manualmente...")
@@ -31,7 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const encuestadorInput = document.getElementById("encuestador")
     if (encuestadorInput) {
       encuestadorInput.value = "Guendy Milena Lizarazo"
-      encuestadorInput.readOnly = true // Opcional: hacer el campo de solo lectura
+      encuestadorInput.readOnly = true // Hacer el campo de solo lectura
     }
 
     // Establecer la fecha actual en el campo de fecha
@@ -120,39 +121,155 @@ document.addEventListener("DOMContentLoaded", () => {
           const trabajador = document.getElementById("trabajador").value
           const fileName = `formularioRiesgos-${trabajador}.pdf`
 
-          // Clonar el contenido del formulario para el PDF
-          const content = document.getElementById("formContainer").cloneNode(true)
+          // Crear una copia del formulario para el PDF
+          const formContent = document.getElementById("formContainer").cloneNode(true)
 
           // Eliminar elementos que no deben aparecer en el PDF
-          const submitBtn = content.querySelector(".form-actions")
+          const submitBtn = formContent.querySelector(".form-actions")
           if (submitBtn) submitBtn.remove()
 
-          const loadingOverlay = content.querySelector("#loadingOverlay")
+          const loadingOverlay = formContent.querySelector("#loadingOverlay")
           if (loadingOverlay) loadingOverlay.remove()
 
-          const successMessage = content.querySelector("#successMessage")
+          const successMessage = formContent.querySelector("#successMessage")
           if (successMessage) successMessage.remove()
 
-          // Opciones para html2pdf
+          // Preparar el contenido para el PDF
+          const pdfContainer = document.createElement("div")
+          pdfContainer.className = "pdf-container"
+
+          // Aplicar estilos específicos para el PDF
+          const style = document.createElement("style")
+          style.textContent = `
+            @page {
+              margin: 10mm;
+            }
+            .pdf-container {
+              font-family: Arial, sans-serif;
+              color: black;
+              width: 100%;
+            }
+            .pdf-container .header {
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+              margin-bottom: 15px;
+              border-bottom: 2px solid #333;
+              padding-bottom: 10px;
+            }
+            .pdf-container .header-title {
+              flex: 3;
+            }
+            .pdf-container .header-info {
+              flex: 1;
+              text-align: right;
+            }
+            .pdf-container h1 {
+              font-size: 16px;
+              margin: 0 0 10px 0;
+            }
+            .pdf-container h2 {
+              font-size: 14px;
+              margin: 10px 0;
+            }
+            .pdf-container h3 {
+              font-size: 12px;
+              margin: 8px 0;
+            }
+            .pdf-container p {
+              margin: 5px 0;
+            }
+            .pdf-container .form-row {
+              display: flex;
+              gap: 10px;
+              margin-bottom: 10px;
+            }
+            .pdf-container .form-group {
+              flex: 1;
+            }
+            .pdf-container label {
+              display: block;
+              font-weight: bold;
+              margin-bottom: 3px;
+            }
+            .pdf-container input, 
+            .pdf-container select, 
+            .pdf-container textarea {
+              width: 100%;
+              padding: 3px;
+              border: 1px solid #000;
+            }
+            .pdf-container table {
+              width: 100%;
+              border-collapse: collapse;
+              margin: 10px 0;
+            }
+            .pdf-container th, 
+            .pdf-container td {
+              border: 1px solid #000;
+              padding: 4px;
+              text-align: left;
+              font-size: 10px;
+            }
+            .pdf-container th {
+              background-color: #f2f2f2;
+              font-weight: bold;
+            }
+            .pdf-container .section {
+              margin-bottom: 15px;
+            }
+            .pdf-container .activities-section {
+              display: flex;
+              gap: 15px;
+            }
+            .pdf-container .activities-column {
+              flex: 1;
+            }
+          `
+
+          // Añadir el estilo y el contenido al contenedor
+          pdfContainer.appendChild(style)
+          pdfContainer.appendChild(formContent)
+
+          // Añadir temporalmente al documento para generar el PDF
+          document.body.appendChild(pdfContainer)
+
+          // Configurar opciones para html2pdf
           const opt = {
-            margin: 10,
+            margin: [10, 10, 10, 10],
             filename: fileName,
             image: { type: "jpeg", quality: 0.98 },
-            html2canvas: { scale: 2 },
-            jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+            html2canvas: {
+              scale: 2,
+              letterRendering: true,
+              useCORS: true,
+            },
+            jsPDF: {
+              unit: "mm",
+              format: "a4",
+              orientation: "portrait",
+              compress: true,
+            },
+            pagebreak: { mode: ["avoid-all", "css", "legacy"] },
           }
 
           // Generar el PDF
           window
             .html2pdf()
-            .from(content)
+            .from(pdfContainer)
             .set(opt)
             .save()
             .then(() => {
-              console.log("PDF generado y descargado correctamente")
+              // Eliminar el contenedor temporal
+              document.body.removeChild(pdfContainer)
+              console.log("PDF generado correctamente")
               resolve()
             })
             .catch((error) => {
+              // Eliminar el contenedor temporal en caso de error
+              if (document.body.contains(pdfContainer)) {
+                document.body.removeChild(pdfContainer)
+              }
               console.error("Error en html2pdf:", error)
               reject(error)
             })
