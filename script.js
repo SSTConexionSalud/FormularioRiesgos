@@ -1,21 +1,21 @@
-// Importar Firebase (asumiendo que se usa la versión modular)
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.2.0/firebase-app.js"
+// Importar Firebase (usando la versión de compatibilidad)
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"
 import {
   getStorage,
   ref,
   uploadBytes,
   getDownloadURL,
-} from "https://www.gstatic.com/firebasejs/9.2.0/firebase-storage.js"
+} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js"
 
-// Configuración de Firebase
+// Configuración de Firebase - Actualizada según tu imagen
 const firebaseConfig = {
   apiKey: "AIzaSyDufDGMz4D_GulFqCI7kFHqQxOnOnAMlok",
   authDomain: "formulario-riesgos.firebaseapp.com",
   projectId: "formulario-riesgos",
-  storageBucket: "formulario-riesgos.firebasestorage.app",
+  storageBucket: "formulario-riesgos.firebasestorage.app", // Usando el valor exacto de tu configuración
   messagingSenderId: "290768053678",
-  appId: "1:290768053678:web:e28336011231e9d8ea943f"
-};
+  appId: "1:290768053678:web:e28336011231e9d8ea943f",
+}
 
 // Inicializar Firebase
 const app = initializeApp(firebaseConfig)
@@ -23,8 +23,8 @@ const app = initializeApp(firebaseConfig)
 // Referencia al servicio de almacenamiento
 const storage = getStorage(app)
 
-// Importar html2pdf (asumiendo que se usa desde un CDN o similar)
-import * as html2pdf from "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
+// Declarar html2pdf como variable global (asumiendo que se carga externamente)
+let html2pdf
 
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("riskForm")
@@ -104,7 +104,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const peligrosaSi = document.querySelector(`input[name="peligrosa_${i}"][value="SI"]`)
       const peligrosaNo = document.querySelector(`input[name="peligrosa_${i}"][value="NO"]`)
 
-      if (actividad.value.trim() !== "") {
+      if (actividad && actividad.value.trim() !== "") {
         if ((rutinariaSi && rutinariaSi.checked) || (rutinariaNo && rutinariaNo.checked)) {
           if ((peligrosaSi && peligrosaSi.checked) || (peligrosaNo && peligrosaNo.checked)) {
             actividadCompleta = true
@@ -126,8 +126,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const content = document.getElementById("formContainer").cloneNode(true)
 
     // Eliminar elementos que no deben aparecer en el PDF
-    const submitBtn = content.querySelector("#submitBtn")
-    if (submitBtn) submitBtn.parentNode.removeChild(submitBtn)
+    const submitBtn = content.querySelector(".form-actions")
+    if (submitBtn) submitBtn.remove()
 
     // Opciones para html2pdf
     const opt = {
@@ -138,9 +138,19 @@ document.addEventListener("DOMContentLoaded", () => {
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
     }
 
-    // Generar el PDF
-    const pdfBlob = await html2pdf().from(content).set(opt).outputPdf("blob")
-    return pdfBlob
+    // Generar el PDF usando la librería html2pdf
+    try {
+      // Asegurarse de que html2pdf esté disponible
+      if (typeof html2pdf === "undefined") {
+        throw new Error("La librería html2pdf no está cargada correctamente")
+      }
+
+      const pdfBlob = await html2pdf().from(content).set(opt).outputPdf("blob")
+      return pdfBlob
+    } catch (error) {
+      console.error("Error al generar PDF:", error)
+      throw error
+    }
   }
 
   function downloadPDF(pdfBlob) {
