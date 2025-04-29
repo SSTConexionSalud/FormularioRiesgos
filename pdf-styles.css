@@ -1,0 +1,106 @@
+/* Estilos específicos para el PDF */
+@page {
+  size: A4;
+  margin: 10mm;
+}
+
+body.pdf-mode {
+  width: 210mm;
+  margin: 0 auto;
+  background-color: white;
+  font-size: 12pt;
+  line-height: 1.3;
+}
+
+.pdf-mode .container {
+  width: 100%;
+  max-width: 100%;
+  padding: 0;
+  box-shadow: none;
+  border: none;
+  background-color: white;
+}
+
+.pdf-mode .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 15px;
+  border-bottom: 2px solid #333;
+  padding-bottom: 10px;
+}
+
+.pdf-mode .header-title {
+  flex: 3;
+}
+
+.pdf-mode .header-info {
+  flex: 1;
+  text-align: right;
+}
+
+.pdf-mode .form-row {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.pdf-mode .form-group {
+  flex: 1;
+}
+
+.pdf-mode table {
+  width: 100%;
+  border-collapse: collapse;
+  page-break-inside: auto;
+}
+
+.pdf-mode tr {
+  page-break-inside: avoid;
+  page-break-after: auto;
+}
+
+.pdf-mode th,
+.pdf-mode td {
+  padding: 5px;
+  border: 1px solid #000;
+}
+
+.pdf-mode input,
+.pdf-mode select,
+.pdf-mode textarea {
+  border: none;
+  font-family: inherit;
+  font-size: inherit;
+  background: transparent;
+}
+
+.pdf-mode .section {
+  margin-bottom: 20px;
+  page-break-inside: avoid;
+}
+
+.pdf-mode h1,
+.pdf-mode h2,
+.pdf-mode h3 {
+  margin-top: 0;
+}
+
+/* Estilos para evitar saltos de página en elementos importantes */
+.pdf-mode .objective,
+.pdf-mode .section h2,
+.pdf-mode .activities-section h3 {
+  page-break-after: avoid;
+}
+
+.pdf-mode .activities-table,
+.pdf-mode .risks-table {
+  page-break-before: auto;
+  page-break-after: auto;
+}
+
+/* Ajustes para tablas grandes */
+.pdf-mode .risks-table th,
+.pdf-mode .risks-table td {
+  font-size: 10pt;
+}
