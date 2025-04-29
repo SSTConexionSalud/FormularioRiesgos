@@ -1,5 +1,4 @@
 document.addEventListener("DOMContentLoaded", () => {
-document.addEventListener("DOMContentLoaded", () => {
   // Verificar si html2pdf está disponible
   if (typeof window.html2pdf === "undefined") {
     console.error("html2pdf no está disponible. Cargando manualmente...")
@@ -281,3 +280,4 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 })
+
