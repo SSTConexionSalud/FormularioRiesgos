@@ -1,28 +1,3 @@
-// Importar Firebase (usando la versión de compatibilidad)
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"
-import {
-  getStorage,
-  ref,
-  uploadBytes,
-  getDownloadURL,
-} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js"
-
-// Configuración de Firebase - Corregida
-const firebaseConfig = {
-  apiKey: "AIzaSyDufDGMz4D_GulFqCI7kFHqQxOnOnAMlok",
-  authDomain: "formulario-riesgos.firebaseapp.com",
-  projectId: "formulario-riesgos",
-  storageBucket: "formulario-riesgos.appspot.com", // Corregido a formato estándar de Firebase
-  messagingSenderId: "290768053678",
-  appId: "1:290768053678:web:e28336011231e9d8ea943f",
-}
-
-// Inicializar Firebase
-const app = initializeApp(firebaseConfig)
-
-// Referencia al servicio de almacenamiento
-const storage = getStorage(app)
-
 document.addEventListener("DOMContentLoaded", () => {
   // Verificar si html2pdf está disponible
   if (typeof window.html2pdf === "undefined") {
@@ -30,7 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Cargar html2pdf manualmente
     const script = document.createElement("script")
-    script.src = "https://raw.githack.com/eKoopmans/html2pdf/master/dist/html2pdf.bundle.min.js"
+    script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"
     script.onload = () => {
       console.log("html2pdf cargado correctamente")
       inicializarFormulario()
@@ -51,6 +26,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const loadingOverlay = document.getElementById("loadingOverlay")
     const successMessage = document.getElementById("successMessage")
     const closeSuccessBtn = document.getElementById("closeSuccessBtn")
+
+    // Precargar el nombre del encuestador
+    const encuestadorInput = document.getElementById("encuestador")
+    if (encuestadorInput) {
+      encuestadorInput.value = "Guendy Milena Lizarazo"
+      encuestadorInput.readOnly = true // Opcional: hacer el campo de solo lectura
+    }
 
     // Establecer la fecha actual en el campo de fecha
     const fechaInput = document.getElementById("fecha")
@@ -75,56 +57,22 @@ document.addEventListener("DOMContentLoaded", () => {
       loadingOverlay.style.display = "flex"
 
       try {
-        // Método alternativo: Usar jsPDF directamente si html2pdf falla
-        let pdfBlob
+        // Generar y descargar PDF
+        await generateAndDownloadPDF()
 
-        try {
-          // Intentar con html2pdf primero
-          pdfBlob = await generatePDFWithHtml2pdf()
-          console.log("PDF generado con html2pdf")
-        } catch (html2pdfError) {
-          console.error("Error con html2pdf:", html2pdfError)
-          alert("Error al generar el PDF. Por favor, intente nuevamente.")
-          loadingOverlay.style.display = "none"
-          return
-        }
-
-        // Subir a Firebase Storage
-        try {
-          await uploadToFirebase(pdfBlob)
-          console.log("PDF subido a Firebase correctamente")
-
-          // Mostrar mensaje de éxito
-          loadingOverlay.style.display = "none"
-          successMessage.style.display = "block"
-
-          // Descargar el PDF localmente también
-          downloadPDF(pdfBlob)
-        } catch (uploadError) {
-          console.error("Error al subir a Firebase:", uploadError)
-          alert("Error al subir el formulario a Firebase: " + uploadError.message)
-          loadingOverlay.style.display = "none"
-        }
-      } catch (error) {
-        console.error("Error general:", error)
+        // Mostrar mensaje de éxito
         loadingOverlay.style.display = "none"
-        alert("Error al procesar el formulario: " + error.message)
+        successMessage.style.display = "block"
+      } catch (error) {
+        console.error("Error al generar o descargar el PDF:", error)
+        loadingOverlay.style.display = "none"
+        alert("Error al generar el PDF: " + error.message)
       }
     })
 
     function validateForm() {
       // Validar campos personales
-      const requiredFields = [
-        "encuestador",
-        "trabajador",
-        "proceso",
-        "cargo",
-        "lugar",
-        "horas",
-        "fecha",
-        "email",
-        "telefono",
-      ]
+      const requiredFields = ["trabajador", "proceso", "cargo", "lugar", "horas", "fecha", "email", "telefono"]
 
       for (const field of requiredFields) {
         const input = document.getElementById(field)
@@ -159,7 +107,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return true
     }
 
-    async function generatePDFWithHtml2pdf() {
+    async function generateAndDownloadPDF() {
       return new Promise((resolve, reject) => {
         try {
           // Verificar nuevamente si html2pdf está disponible
@@ -167,6 +115,10 @@ document.addEventListener("DOMContentLoaded", () => {
             reject(new Error("html2pdf no está disponible"))
             return
           }
+
+          // Obtener el nombre del trabajador para el nombre del archivo
+          const trabajador = document.getElementById("trabajador").value
+          const fileName = `formularioRiesgos-${trabajador}.pdf`
 
           // Clonar el contenido del formulario para el PDF
           const content = document.getElementById("formContainer").cloneNode(true)
@@ -184,7 +136,7 @@ document.addEventListener("DOMContentLoaded", () => {
           // Opciones para html2pdf
           const opt = {
             margin: 10,
-            filename: "encuesta_riesgos_laborales.pdf",
+            filename: fileName,
             image: { type: "jpeg", quality: 0.98 },
             html2canvas: { scale: 2 },
             jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
@@ -195,64 +147,20 @@ document.addEventListener("DOMContentLoaded", () => {
             .html2pdf()
             .from(content)
             .set(opt)
-            .outputPdf("blob")
-            .then((blob) => {
-              console.log("PDF generado correctamente")
-              resolve(blob)
+            .save()
+            .then(() => {
+              console.log("PDF generado y descargado correctamente")
+              resolve()
             })
             .catch((error) => {
-              console.error("Error en html2pdf.outputPdf:", error)
+              console.error("Error en html2pdf:", error)
               reject(error)
             })
         } catch (error) {
-          console.error("Error en generatePDFWithHtml2pdf:", error)
+          console.error("Error en generateAndDownloadPDF:", error)
           reject(error)
         }
       })
-    }
-
-    function downloadPDF(pdfBlob) {
-      try {
-        const url = URL.createObjectURL(pdfBlob)
-        const a = document.createElement("a")
-        a.href = url
-        a.download = "encuesta_riesgos_laborales.pdf"
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
-      } catch (error) {
-        console.error("Error al descargar PDF:", error)
-      }
-    }
-
-    async function uploadToFirebase(pdfBlob) {
-      // Obtener datos del formulario para el nombre del archivo
-      const trabajador = document.getElementById("trabajador").value
-      const fecha = document.getElementById("fecha").value
-      const fileName = `Encuesta_Riesgos_${trabajador}_${fecha}.pdf`
-
-      console.log("Subiendo archivo a Firebase Storage:", fileName)
-      console.log("Storage bucket:", firebaseConfig.storageBucket)
-
-      // Crear una referencia al archivo en Firebase Storage
-      const storageRef = ref(storage, `formularios/${fileName}`)
-
-      try {
-        // Subir el archivo
-        const snapshot = await uploadBytes(storageRef, pdfBlob)
-        console.log("Archivo subido a Firebase Storage:", snapshot)
-
-        // Obtener la URL de descarga
-        const downloadURL = await getDownloadURL(storageRef)
-        console.log("URL de descarga:", downloadURL)
-
-        return downloadURL
-      } catch (error) {
-        console.error("Error al subir archivo a Firebase:", error)
-        console.error("Detalles del error:", error.code, error.message)
-        throw error
-      }
     }
   }
 })
