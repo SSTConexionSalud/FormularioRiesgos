@@ -23,9 +23,6 @@ const app = initializeApp(firebaseConfig)
 // Referencia al servicio de almacenamiento
 const storage = getStorage(app)
 
-// Declarar html2pdf como variable global (asumiendo que se carga externamente)
-let html2pdf
-
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("riskForm")
   const submitBtn = document.getElementById("submitBtn")
@@ -122,34 +119,57 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function generatePDF() {
-    // Clonar el contenido del formulario para el PDF
-    const content = document.getElementById("formContainer").cloneNode(true)
-
-    // Eliminar elementos que no deben aparecer en el PDF
-    const submitBtn = content.querySelector(".form-actions")
-    if (submitBtn) submitBtn.remove()
-
-    // Opciones para html2pdf
-    const opt = {
-      margin: 10,
-      filename: "encuesta_riesgos_laborales.pdf",
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-    }
-
-    // Generar el PDF usando la librería html2pdf
-    try {
-      // Asegurarse de que html2pdf esté disponible
-      if (typeof html2pdf === "undefined") {
-        throw new Error("La librería html2pdf no está cargada correctamente")
+    return new Promise((resolve, reject) => {
+      // Verificar si html2pdf está disponible
+      if (typeof window.html2pdf === "undefined") {
+        // Intentar cargar la librería dinámicamente si no está disponible
+        const script = document.createElement("script")
+        script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
+        script.onload = () => {
+          console.log("html2pdf cargado dinámicamente")
+          generatePDFContent().then(resolve).catch(reject)
+        }
+        script.onerror = () => {
+          reject(new Error("No se pudo cargar la librería html2pdf"))
+        }
+        document.head.appendChild(script)
+      } else {
+        generatePDFContent().then(resolve).catch(reject)
       }
+    })
 
-      const pdfBlob = await html2pdf().from(content).set(opt).outputPdf("blob")
-      return pdfBlob
-    } catch (error) {
-      console.error("Error al generar PDF:", error)
-      throw error
+    async function generatePDFContent() {
+      try {
+        // Clonar el contenido del formulario para el PDF
+        const content = document.getElementById("formContainer").cloneNode(true)
+
+        // Eliminar elementos que no deben aparecer en el PDF
+        const submitBtn = content.querySelector(".form-actions")
+        if (submitBtn) submitBtn.remove()
+
+        const loadingOverlay = content.querySelector("#loadingOverlay")
+        if (loadingOverlay) loadingOverlay.remove()
+
+        const successMessage = content.querySelector("#successMessage")
+        if (successMessage) successMessage.remove()
+
+        // Opciones para html2pdf
+        const opt = {
+          margin: 10,
+          filename: "encuesta_riesgos_laborales.pdf",
+          image: { type: "jpeg", quality: 0.98 },
+          html2canvas: { scale: 2 },
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        }
+
+        console.log("Generando PDF...")
+        const pdfBlob = await window.html2pdf().from(content).set(opt).outputPdf("blob")
+        console.log("PDF generado correctamente")
+        return pdfBlob
+      } catch (error) {
+        console.error("Error al generar PDF:", error)
+        throw error
+      }
     }
   }
 
