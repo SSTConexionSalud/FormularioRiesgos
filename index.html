@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Encuesta para la Identificación de Peligros, Valoración de Riesgos y Determinación de Controles</title>
     <link rel="stylesheet" href="styles.css">
-    <!-- HTML2PDF -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- HTML2PDF con atributo defer para asegurar que se cargue correctamente -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
 </head>
 <body>
     <div class="container" id="formContainer">
@@ -466,6 +466,7 @@
                                 </td>
                                 <td><input type="text" name="condicion_18"></td>
                                 <td><input type="number" name="exposicion_18" min="0" max="24"></td>
+                                <td><input type="text" name="efect  min="0" max="24"></td>
                                 <td><input type="text" name="efectos_18"></td>
                             </tr>
                             <tr>
@@ -850,6 +851,7 @@
         </div>
     </div>
     
+    <!-- Mover el script al final del body para asegurar que se cargue después del DOM -->
     <script type="module" src="script.js"></script>
 </body>
 </html>
